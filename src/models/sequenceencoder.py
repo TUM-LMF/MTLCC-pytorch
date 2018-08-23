@@ -1,6 +1,7 @@
 import torch
 import torch.nn
 from models.convlstm.convlstm import ConvLSTMCell
+import torch.nn.functional as F
 
 class LSTMSequentialEncoder(torch.nn.Module):
     def __init__(self, height, width, input_dim=13, hidden_dim=64, nclasses=8, kernel_size=(3,3), bias=False):
@@ -13,8 +14,6 @@ class LSTMSequentialEncoder(torch.nn.Module):
                      hidden_dim=hidden_dim,
                      kernel_size=kernel_size,
                      bias=bias)
-
-        self.softmax = torch.nn.Softmax2d()
 
         self.final = torch.nn.Conv2d(hidden_dim, nclasses, (3, 3))
 
@@ -40,7 +39,7 @@ class LSTMSequentialEncoder(torch.nn.Module):
         x = torch.nn.functional.pad(state, (1, 1, 1, 1), 'constant', 0)
         x = self.final.forward(x)
 
-        return self.softmax(x)
+        return F.log_softmax(x)
 
 
 if __name__=="__main__":

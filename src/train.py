@@ -6,11 +6,13 @@ import sys
 
 traindir=sys.argv[1]
 testdir=None
-batchsize=3
+batchsize=16
 shuffle=True
-workers=1
-epochs=3
+workers=16
+epochs=100
 lr=1e-3
+nclasses=18
+
 
 traindataset = Dataset(traindir)
 #testdataset = Dataset(testdir)
@@ -18,7 +20,7 @@ traindataset = Dataset(traindir)
 traindataloader = torch.utils.data.DataLoader(traindataset,batch_size=batchsize,shuffle=shuffle,num_workers=workers)
 #testdataloader = torch.utils.data.DataLoader(testdataset,batch_size=batchsize,shuffle=shuffle,num_workers=workers)
 
-network = LSTMSequentialEncoder(48,48)
+network = LSTMSequentialEncoder(48,48,nclasses=nclasses)
 
 network = torch.nn.DataParallel(network).cuda()
 
@@ -33,9 +35,9 @@ for epoch in range(epochs):
         input, target = data
 
         output = network.forward(input)
-        l = loss(output, target.cuda())
+        l = loss(output, target.cuda()).cuda()
         #print(l)
-        print("step")
+        print(l.data.cpu().numpy())
 
         l.backward()
         optimizer.step()

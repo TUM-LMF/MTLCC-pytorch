@@ -6,6 +6,9 @@ import numpy as np
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import random
+from utils.progressbar import ProgressBar
+
+LABEL_FILENAME="y.tif"
 
 def read(file):
     with rasterio.open(file) as src:
@@ -29,37 +32,63 @@ class RandomDataset(torch.utils.data.Dataset):
 
 
 class ijgiDataset(torch.utils.data.Dataset):
-    def __init__(self, root_dir, seqlength=30, augment=True):
+    def __init__(self, root_dir, seqlength=30):
         self.root_dir = root_dir
-
+        self.data_dir = os.path.join(root_dir,"data")
         self.seqlength=seqlength
 
         stats={"rejected_length":0,"total_samples":0}
 
-        if augment:
-            self.augmentrate=0.5
-        else:
-            self.augmentrate=0
-
-        self.maxdates = 0
-
         # statistics
         self.samples = list()
-        self.ndates = list()
-        for f in os.listdir(root_dir):
 
-            path = os.path.join(self.root_dir, f)
+        self.ndates = list()
+        files = os.listdir(self.data_dir)
+
+        self.classids, self.classes = self.read_classes(os.path.join(self.root_dir, "classes.txt"))
+
+        progress = ProgressBar(len(files), fmt=ProgressBar.FULL)
+        for f in files:
+            progress.current += 1
+            progress()
+
+
+            path = os.path.join(self.data_dir, f)
             ndates = len(get_dates(path))
+
+            #read(join(path,"y.tif"))
 
             if ndates < self.seqlength:
                 stats["rejected_length"] += 1
                 continue # skip shorter sequence lengths
 
+            # save class histogram
+            #arr, _ = read(os.path.join(path, LABEL_FILENAME))
+            #self.labelhistograms.append(np.histogram(arr, bins=range(arr.max())))
+
             stats["total_samples"] += 1
             self.samples.append(f)
             self.ndates.append(ndates)
 
+        progress.done()
+
         print_stats(stats)
+
+    def read_classes(self, csv):
+
+        with open(csv, 'r') as f:
+            classes = f.readlines()
+
+        ids=list()
+        names=list()
+        for row in classes:
+            row=row.replace("\n","")
+            if '|' in row:
+                id,cl = row.split('|')
+                ids.append(int(id))
+                names.append(cl)
+
+        return ids, names
 
     def __len__(self):
         return len(self.samples)
@@ -70,9 +99,9 @@ class ijgiDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
 
-        path = os.path.join(self.root_dir, self.samples[idx])
+        path = os.path.join(self.data_dir, self.samples[idx])
 
-        label, profile = read(os.path.join(path,"y.tif"))
+        label, profile = read(os.path.join(path,LABEL_FILENAME))
 
         profile["name"] = self.samples[idx]
 
@@ -111,6 +140,15 @@ class ijgiDataset(torch.utils.data.Dataset):
         #     x60 = np.rot90(x60, angle, axes=(2, 3))
         #     label = np.rot90(label, angle, axes=(0, 1))
 
+        # replace stored ids with index in classes csv
+        #label =
+        label=label[0]
+        new = np.zeros(label.shape, np.int)
+        for cl,i in zip(self.classids, range(len(self.classids))):
+            new[label == cl] = i
+
+        label=new
+
         label = torch.from_numpy(label)
         x10 = torch.from_numpy(x10)
         x20 = torch.from_numpy(x20)
@@ -121,11 +159,12 @@ class ijgiDataset(torch.utils.data.Dataset):
 
         x = torch.cat((x10, x20, x60), 1)
 
-        npad = self.maxdates - x.shape[0]
+
+
 
         #x = F.pad(x, (0, 0, 0, 0, 0, 0, 0, npad), mode='constant', value=-1)
 
-        return x.float(), torch.squeeze(label).long()
+        return x.float(), label.long()
 
 def get_dates(path, n=None):
     """
