@@ -29,9 +29,9 @@ class LSTMSequentialEncoder(torch.nn.Module):
         b, c, t, h, w = x.shape
 
         if hidden is None:
-            hidden = torch.zeros((b, c, h, w))
+            hidden = torch.zeros((b, c, h, w)).cuda()
         if state is None:
-            state = torch.zeros((b, c, h, w))
+            state = torch.zeros((b, c, h, w)).cuda()
 
         for iter in range(t):
 
