@@ -32,32 +32,49 @@ class RandomDataset(torch.utils.data.Dataset):
 
 
 class ijgiDataset(torch.utils.data.Dataset):
-    def __init__(self, root_dir, seqlength=30):
+    def __init__(self, root_dir, seqlength=30, tileids=None):
         self.root_dir = root_dir
         self.data_dir = os.path.join(root_dir,"data")
         self.seqlength=seqlength
 
-        stats={"rejected_length":0,"total_samples":0}
+        stats=dict(
+            rejected_nopath=0,
+            rejected_length=0,
+            total_samples=0)
 
         # statistics
         self.samples = list()
 
         self.ndates = list()
-        files = os.listdir(self.data_dir)
+
+
+        if tileids is None:
+            files = os.listdir(self.data_dir)
+        else:
+            # tileids e.g. "tileids/train_fold0.tileids" path of line separated tileids specifying
+            with open(os.path.join(root_dir, tileids), 'r') as f:
+                files = [el.replace("\n", "") for el in f.readlines()]
+
+
 
         self.classids, self.classes = self.read_classes(os.path.join(self.root_dir, "classes.txt"))
 
         progress = ProgressBar(len(files), fmt=ProgressBar.FULL)
+
         for f in files:
             progress.current += 1
             progress()
 
 
             path = os.path.join(self.data_dir, f)
-            ndates = len(get_dates(path))
+
+
+            if not os.path.exists(path):
+                stats["rejected_nopath"] += 1
+                continue
 
             #read(join(path,"y.tif"))
-
+            ndates = len(get_dates(path))
             if ndates < self.seqlength:
                 stats["rejected_length"] += 1
                 continue # skip shorter sequence lengths
@@ -69,6 +86,7 @@ class ijgiDataset(torch.utils.data.Dataset):
             stats["total_samples"] += 1
             self.samples.append(f)
             self.ndates.append(ndates)
+
 
         progress.done()
 
