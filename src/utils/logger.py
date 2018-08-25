@@ -54,7 +54,6 @@ class Logger():
         self.mode = mode
 
     def log(self, stats, iteration):
-        self.steps.append(iteration)
 
         stats["epoch"] = self.epoch
         stats["iteration"] = iteration
@@ -62,7 +61,11 @@ class Logger():
 
         row = pd.DataFrame(stats, index=[self.idx])
 
-        self.data = self.data.append(row)
+        self.data = self.data.append(row, sort=False)
+        self.idx +=1
+
+    def get_data(self):
+        return self.data
 
     # def update_visdom_current_epoch(self):
     #

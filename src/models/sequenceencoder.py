@@ -39,7 +39,7 @@ class LSTMSequentialEncoder(torch.nn.Module):
         x = torch.nn.functional.pad(state, (1, 1, 1, 1), 'constant', 0)
         x = self.final.forward(x)
 
-        return F.log_softmax(x)
+        return F.log_softmax(x, dim=1)
 
 
 if __name__=="__main__":

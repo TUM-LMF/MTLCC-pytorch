@@ -37,16 +37,20 @@ def main(
     optimizer = torch.optim.Adam(network.parameters(), lr=lr)
     loss=torch.nn.NLLLoss().cuda()
 
-    if snapshot is not None:
-        state = resume(snapshot,model=network, optimizer=optimizer)
+    #if snapshot is not None:
+    #    state = resume(snapshot,model=network, optimizer=optimizer)
 
     for epoch in range(epochs):
 
         logger.update_epoch(epoch)
 
+        print("Epoch {}\n".format(epoch))
         train_epoch(traindataloader, network, optimizer, loss, logger=logger)
 
         test_epoch(testdataloader, network,loss, logger=logger)
+
+        data = logger.get_data()
+
 
         checkpoint_path = "model_{:2d}.pth".format(epoch)
         save(checkpoint_path, network, optimizer)
