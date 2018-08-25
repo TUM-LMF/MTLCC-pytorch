@@ -182,7 +182,10 @@ class ijgiDataset(torch.utils.data.Dataset):
 
         #x = F.pad(x, (0, 0, 0, 0, 0, 0, 0, npad), mode='constant', value=-1)
 
-        return x.float(), label.long()
+        if torch.cuda.is_available():
+            return x.float().cuda(), label.long().cuda()
+        else:
+            return x.float(), label.long()
 
 def get_dates(path, n=None):
     """

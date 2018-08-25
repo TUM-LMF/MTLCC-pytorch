@@ -44,9 +44,11 @@ def main(
 
         logger.update_epoch(epoch)
 
+        print()
         print("Epoch {}\n".format(epoch))
+        print("train")
         train_epoch(traindataloader, network, optimizer, loss, logger=logger)
-
+        print("test")
         test_epoch(testdataloader, network,loss, logger=logger)
 
         data = logger.get_data()
@@ -76,7 +78,7 @@ def train_epoch(dataloader, network, optimizer, loss, logger):
         logger.log(stats, iteration)
 
         if iteration > 10:
-            break
+            return
 
 def test_epoch(dataloader, network, loss, logger):
     printer = Printer(N=len(dataloader))
@@ -88,7 +90,7 @@ def test_epoch(dataloader, network, loss, logger):
             input, target = data
 
             output = network.forward(input)
-            l = loss(output, target.cuda()).cuda()
+            l = loss(output, target)
             #print(l)
             stats = {"loss":l.data.cpu().numpy()}
 
@@ -96,7 +98,7 @@ def test_epoch(dataloader, network, loss, logger):
             logger.log(stats, iteration)
 
             if iteration > 10:
-                break
+                return
 
 
 if __name__ == "__main__":
