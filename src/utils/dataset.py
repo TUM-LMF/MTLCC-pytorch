@@ -183,7 +183,7 @@ class ijgiDataset(torch.utils.data.Dataset):
         #x = F.pad(x, (0, 0, 0, 0, 0, 0, 0, npad), mode='constant', value=-1)
 
         if torch.cuda.is_available():
-            return x.float().cuda(), label.long().cuda()
+            return x.cuda().float(), label.cuda().long()
         else:
             return x.float(), label.long()
 

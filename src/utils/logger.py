@@ -67,6 +67,70 @@ class Logger():
     def get_data(self):
         return self.data
 
+class VisdomLogger():
+    def __init__(self):
+        self.viz = Visdom()
+        self.windows = dict()
+
+        r = np.random.RandomState(0)
+        self.colors = r.randint(0,255, size=(255,3))
+        pass
+
+    def update(self, data):
+        data_mean_per_epoch = data.groupby(["mode", "epoch"]).mean()
+        cols = data_mean_per_epoch.columns
+        modes = data_mean_per_epoch.index.levels[0]
+
+        for name in cols:
+
+             if name in self.windows.keys():
+                 win = self.windows[name]
+                 update = 'new'
+             else:
+                 win = None # first log -> new window
+                 update = None
+
+             opts = dict(
+                 title=name,
+                 showlegend=True,
+                 xlabel='epochs',
+                 ylabel=name)
+
+             for mode in modes:
+
+                 epochs = data_mean_per_epoch[name].loc[mode].index
+                 values = data_mean_per_epoch[name].loc[mode]
+
+                 win = self.viz.line(
+                     X=epochs,
+                     Y=values,
+                     name=mode,
+                     win=win,
+                     opts=opts,
+                     update=update
+                 )
+                 update='insert'
+
+             self.windows[name] = win
+
+    def plot_images(self, target, output):
+
+        # log softmax -> softmax
+        output = np.exp(output)
+
+        prediction = np.argmax(output, axis=1)
+
+        target = np.swapaxes(self.colors[target], -1, 1)
+        prediction = np.swapaxes(self.colors[prediction], -1, 1)
+
+        self.viz.images(target, win="target", opts=dict(title='Target'))
+        self.viz.images(prediction, win="predictions", opts=dict(title='Predictions'))
+
+        b, c, h, w = output.shape
+        for cl in range(c):
+            arr = np.expand_dims(output[:,cl],1)*255
+            self.viz.images(arr, win="class"+str(cl), opts=dict(title="class"+str(cl)))
+
     # def update_visdom_current_epoch(self):
     #
     #     for key in self.record.keys():
