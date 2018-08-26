@@ -1,4 +1,8 @@
 .idea
+
+data
+checkpoints
+
 # Created by https://www.gitignore.io/api/python,pycharm
 
 ### PyCharm ###

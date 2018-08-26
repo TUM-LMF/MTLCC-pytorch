@@ -4,7 +4,6 @@ import rasterio
 import torch
 import numpy as np
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
 import random
 from utils.progressbar import ProgressBar
 
@@ -108,10 +107,6 @@ class ijgiDataset(torch.utils.data.Dataset):
 
     def __len__(self):
         return len(self.samples)
-
-    def plot_info(self):
-        plt.hist(np.array(self.ndates), np.array(self.ndates).max())
-        plt.show()
 
     def __getitem__(self, idx):
 

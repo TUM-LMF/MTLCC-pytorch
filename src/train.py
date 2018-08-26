@@ -98,9 +98,6 @@ def train_epoch(dataloader, network, optimizer, loss, loggers):
         printer.print(stats, iteration)
         logger.log(stats, iteration)
 
-        if iteration > 5:
-            return
-
 def test_epoch(dataloader, network, loss, loggers):
     logger, vizlogger = loggers
 
@@ -119,10 +116,6 @@ def test_epoch(dataloader, network, loss, loggers):
 
             printer.print(stats, iteration)
             logger.log(stats, iteration)
-
-            if iteration > 5:
-                break
-
 
         vizlogger.plot_images(target.cpu().detach().numpy(), output.cpu().detach().numpy())
 
