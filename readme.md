@@ -36,6 +36,10 @@ bash download.sh
 Train 10 epochs (batchsize 16, dataloader-workers 16) with initialized weights
 from checkpoint file `checkpoints/model_00.pth`
 ```
+# add src folder to python path
+export PYTHONPATH="$PATHONPATH:$PWD/src"
+
+# train
 python src/train.py data -b 16 -w 16 -s checkpoints/model_00.pth
 ```
 
