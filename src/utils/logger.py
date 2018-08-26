@@ -1,7 +1,8 @@
-from visdom import Visdom
 import numpy as np
 import datetime
 import pandas as pd
+
+from visdom import Visdom
 
 class Printer():
 
@@ -44,6 +45,11 @@ class Logger():
         self.idx = idx
         self.data = pd.DataFrame(columns=["epoch","iteration","mode"]+self.columns)
 
+    def resume(self, data):
+        self.data = data
+        self.idx = data.index[-1]
+        self.epoch = data["epoch"].max()
+
     def update_epoch(self, epoch=None):
         if epoch is None:
             self.epoch+=1
@@ -74,7 +80,6 @@ class VisdomLogger():
 
         r = np.random.RandomState(0)
         self.colors = r.randint(0,255, size=(255,3))
-        pass
 
     def update(self, data):
         data_mean_per_epoch = data.groupby(["mode", "epoch"]).mean()

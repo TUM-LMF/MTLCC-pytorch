@@ -55,8 +55,6 @@ class ijgiDataset(torch.utils.data.Dataset):
             with open(os.path.join(root_dir, tileids), 'r') as f:
                 files = [el.replace("\n", "") for el in f.readlines()]
 
-
-
         self.classids, self.classes = self.read_classes(os.path.join(self.root_dir, "classes.txt"))
 
         progress = ProgressBar(len(files), fmt=ProgressBar.FULL)
