@@ -113,6 +113,10 @@ def test_epoch(dataloader, network, loss, loggers):
 
             input, target = data
 
+            if torch.cuda.is_available():
+                input = input.cuda()
+                target = target.cuda()
+
             output = network.forward(input)
             l = loss(output, target)
             #print(l)
