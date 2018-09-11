@@ -2,7 +2,12 @@ import numpy as np
 import datetime
 import pandas as pd
 
-from visdom import Visdom
+try:
+    from visdom import Visdom
+except:
+    print("could not find visdom package. try 'pip install visdom'. continue without...")
+    Visdom=None
+    pass
 
 class Printer():
 
@@ -37,13 +42,14 @@ class Printer():
 
 class Logger():
 
-    def __init__(self, columns, modes, epoch=0, idx=0):
+    def __init__(self, columns, modes, csv=None, epoch=0, idx=0):
 
         self.columns=columns
         self.mode=modes[0]
         self.epoch=epoch
         self.idx = idx
         self.data = pd.DataFrame(columns=["epoch","iteration","mode"]+self.columns)
+        self.csv = csv
 
     def resume(self, data):
         self.data = data
@@ -73,15 +79,93 @@ class Logger():
     def get_data(self):
         return self.data
 
+    def save_csv(self, path=None):
+        if path is not None:
+            self.data.to_csv(path)
+        elif self.csv is not None:
+            self.data.to_csv(self.csv)
+        else:
+            raise ValueError("please provide either path argument or initialize Logger() with csv argument")
+
 class VisdomLogger():
-    def __init__(self):
-        self.viz = Visdom()
+    def __init__(self,**kwargs):
+        if Visdom is None:
+            self.viz = None # do nothing
+            return
+
+        self.viz = Visdom(**kwargs)
         self.windows = dict()
 
-        r = np.random.RandomState(0)
+        r = np.random.RandomState(1)
         self.colors = r.randint(0,255, size=(255,3))
+        self.colors[0] = np.array([1., 1., 1.])
+        self.colors[1] = np.array([0. , 0.18431373, 0.65490196]) # ikb blue
 
     def update(self, data):
+        self.plot_epochs(data)
+        self.plot_steps(data)
+
+    def plot_steps(self, data, maxplotpoints=50):
+
+        if not self.viz.check_connection():
+            return # do nothing
+
+        name="loss"
+        win = "c_"+name
+        if "c_"+name in self.windows.keys():
+            #win = self.windows["c_"+name]
+            update = 'new'
+        else:
+            #win = None  # first log -> new window
+            update = None
+
+        for mode in data["mode"].unique():
+            d = data.loc[data["mode"] == mode]
+
+            maxiter = d["iteration"].max()
+
+            if len(d) > maxplotpoints:
+                d = d.tail(maxplotpoints)
+                #d = d.sample(maxplotpoints).sort_index()
+
+            if maxiter > 0:
+                frac_epochs = d["epoch"] + d["iteration"] / maxiter
+            else:
+                frac_epochs = np.array([0])
+            #total_iter = d["epoch"]*maxiter + d["iteration"]
+            values = d[name]
+
+            opts = dict(
+                title=name,
+                showlegend=True,
+                xlabel='epochs',
+                ylabel=name)
+
+            win = self.viz.line(
+                X=frac_epochs,
+                Y=values,
+                name=mode,
+                win=win,
+                opts=opts,
+                update=update
+            )
+            update = 'insert'
+
+        self.windows["c_"+name] = win
+
+    def plot_epochs(self, data):
+        """
+        Plots mean of epochs
+
+        :param data:
+        :return:
+        """
+        if self.viz is None:
+            return # do nothing
+
+        if not self.viz.check_connection():
+            return # do nothing
+
         data_mean_per_epoch = data.groupby(["mode", "epoch"]).mean()
         cols = data_mean_per_epoch.columns
         modes = data_mean_per_epoch.index.levels[0]
@@ -92,7 +176,7 @@ class VisdomLogger():
                  win = self.windows[name]
                  update = 'new'
              else:
-                 win = None # first log -> new window
+                 win = name # first log -> new window
                  update = None
 
              opts = dict(
@@ -118,7 +202,14 @@ class VisdomLogger():
 
              self.windows[name] = win
 
+
     def plot_images(self, target, output):
+        if self.viz is None:
+            return
+
+        if not self.viz.check_connection():
+            return # do nothing
+
 
         # log softmax -> softmax
         output = np.exp(output)
@@ -135,49 +226,4 @@ class VisdomLogger():
         for cl in range(c):
             arr = np.expand_dims(output[:,cl],1)*255
             self.viz.images(arr, win="class"+str(cl), opts=dict(title="class"+str(cl)))
-
-    # def update_visdom_current_epoch(self):
-    #
-    #     for key in self.record.keys():
-    #
-    #         if key in self.windows.keys():
-    #             win = self.windows[key]
-    #         else:
-    #             win = None # first log -> new window
-    #
-    #         opts = dict(
-    #             title="current epoch",
-    #             showlegend=True,
-    #             xlabel='steps',
-    #             ylabel=key)
-    #
-    #         self.windows[key] = self.viz.line(
-    #             X=np.array(self.steps),
-    #             Y=np.array(self.record[key]),
-    #             name=self.prefix,
-    #             win=win,
-    #             opts=opts
-    #         )
-    #
-    # def update_visdom_per_epoch(self):
-    #
-    #     for key in self.epoch_record.keys():
-    #         if key in self.epochwindows.keys():
-    #             win = self.epochwindows[key]
-    #         else:
-    #             win = None # first log -> new window
-    #
-    #         opts = dict(
-    #             title="all epochs",
-    #             showlegend=True,
-    #             xlabel='epochs',
-    #             ylabel=key)
-    #
-    #         self.epochwindows[key] = self.viz.line(
-    #             X=np.array(self.epochs),
-    #             Y=np.array(self.epoch_record[key]),
-    #             name=self.prefix,
-    #             win=win,
-    #             opts=opts
-    #         )
 
