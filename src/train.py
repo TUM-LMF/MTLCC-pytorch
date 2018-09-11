@@ -35,7 +35,7 @@ def main(
     traindataloader = torch.utils.data.DataLoader(traindataset,batch_size=batchsize,shuffle=True,num_workers=workers)
     testdataloader = torch.utils.data.DataLoader(testdataset,batch_size=batchsize,shuffle=False,num_workers=workers)
 
-    logger = Logger(columns=["loss", "test"], modes=["train", "test"])
+    logger = Logger(columns=["loss"], modes=["train", "test"])
 
     vizlogger = VisdomLogger()
 
@@ -101,6 +101,7 @@ def train_epoch(dataloader, network, optimizer, loss, loggers):
 
         printer.print(stats, iteration)
         logger.log(stats, iteration)
+        vizlogger.plot_steps(logger.get_data())
 
 def test_epoch(dataloader, network, loss, loggers):
     logger, vizlogger = loggers
@@ -124,6 +125,7 @@ def test_epoch(dataloader, network, loss, loggers):
 
             printer.print(stats, iteration)
             logger.log(stats, iteration)
+            vizlogger.plot_steps(logger.get_data())
 
         vizlogger.plot_images(target.cpu().detach().numpy(), output.cpu().detach().numpy())
 
