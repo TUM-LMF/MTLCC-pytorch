@@ -2,7 +2,7 @@
 
 ##### A (yet barebone) Pytorch port of [Rußwurm & Körner (2018)](http://www.mdpi.com/2220-9964/7/4/129/htm) [Tensorflow implementation](https://github.com/TUM-LMF/MTLCC)
 
-Please consider citing 
+Please consider citing
 ```
 Rußwurm M., Körner M. (2018). Multi-Temporal Land Cover Classification with
 Sequential Recurrent Encoders. ISPRS International Journal of Geo-Information, 2018.
@@ -59,4 +59,9 @@ not yet implemented features compared to the Tensorflow version
 
 * ConvGRU integration in `train.py`
 * bidirectional RNN loop
-* masking of the background class 
+* masking of the background class
+
+### Source of ConvLSTM and ConvGRU implementations
+
+* ConvLSTM cell implementation from `https://github.com/ndrplz/ConvLSTM_pytorch`
+* (not used yet) ConvGRU cell implementation from `https://github.com/bionick87/ConvGRUCell-pytorch`
